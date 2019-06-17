@@ -24,13 +24,16 @@ namespace Simulation {
         void LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resourceId, ID2D1Bitmap** pBitmap);
 
         template<class T>
-        inline void SafeRelease(T** t);
+        inline void SafeRelease(T** t) const;
     public:
         Graphics(HWND hWnd);
         ~Graphics();
 
-        bool HasSucceededLastOperation();
-        bool HasFailedLastOperation();
+        bool HasSucceededLastOperation() const;
+        bool HasFailedLastOperation() const;
+
+        const ID2D1Bitmap* const GetEarthBitmap() const;
+        const ID2D1Bitmap* const GetSatelliteBitmap() const;
     };
 
     void ShowError(std::wstring errMsg);

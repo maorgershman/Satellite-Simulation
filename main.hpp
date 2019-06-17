@@ -9,6 +9,7 @@ namespace Simulation {
     struct Main {
         static HWND InitializeWindow(HINSTANCE hInstance);
         static Graphics InitializeGraphics(HWND hWnd);
+        static void InitializeModules(Graphics& graphics);
         static void StartUpdating();
         static void MessageLoop();
     };

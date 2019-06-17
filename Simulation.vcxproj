@@ -124,15 +124,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="earth.hpp" />
     <ClInclude Include="event_handler.hpp" />
     <ClInclude Include="graphics.hpp" />
     <ClInclude Include="main.hpp" />
     <ClInclude Include="resource.hpp" />
+    <ClInclude Include="satellite.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="earth.cpp" />
     <ClCompile Include="event_handler.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="satellite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Earth.png" />

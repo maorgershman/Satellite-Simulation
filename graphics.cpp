@@ -177,16 +177,24 @@ void Simulation::Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory
     SafeRelease(&converter);
 }
 
-bool Simulation::Graphics::HasSucceededLastOperation() {
+const ID2D1Bitmap* const Simulation::Graphics::GetEarthBitmap() const {
+    return bmpEarth;
+}
+
+const ID2D1Bitmap* const Simulation::Graphics::GetSatelliteBitmap() const {
+    return bmpSatellite;
+}
+
+bool Simulation::Graphics::HasSucceededLastOperation() const {
     return SUCCEEDED(hResult);
 }
 
-bool Simulation::Graphics::HasFailedLastOperation() {
+bool Simulation::Graphics::HasFailedLastOperation() const {
     return FAILED(hResult);
 }
 
 template<class T>
-void Simulation::Graphics::SafeRelease(T** t) {
+void Simulation::Graphics::SafeRelease(T** t) const {
     if (*t != nullptr) {
         (*t)->Release();
         (*t) = nullptr;

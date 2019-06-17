@@ -1,4 +1,6 @@
 #include "main.hpp"
+#include "earth.hpp"
+#include "satellite.hpp"
 
 int Simulation::Width = 0, Simulation::Height = 0;
 
@@ -6,6 +8,7 @@ int __stdcall wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR
     HWND hWnd = Simulation::Main::InitializeWindow(hInstance);
     Simulation::Graphics graphics = Simulation::Main::InitializeGraphics(hWnd);
     if (graphics.HasSucceededLastOperation()) {
+        Simulation::Main::InitializeModules(graphics);
         Simulation::Main::StartUpdating();
         Simulation::Main::MessageLoop();
     }
@@ -38,6 +41,11 @@ HWND Simulation::Main::InitializeWindow(HINSTANCE hInstance) {
 
 Simulation::Graphics Simulation::Main::InitializeGraphics(HWND hWnd) {
     return Graphics(hWnd);
+}
+
+void Simulation::Main::InitializeModules(Graphics& graphics) {
+    Earth::Initialize(graphics.GetEarthBitmap());
+    Satellite::Initialize(graphics.GetSatelliteBitmap());
 }
 
 void Simulation::Main::StartUpdating() {
