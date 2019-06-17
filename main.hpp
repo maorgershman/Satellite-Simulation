@@ -4,7 +4,7 @@
 #include "event_handler.hpp"
 
 namespace Simulation {
-    constexpr int UpdatesPerSecond = 200;
+    constexpr int UpdatesPerSecond = 120;
     static_assert(UpdatesPerSecond <= 1000000);
 
     extern int Width, Height;

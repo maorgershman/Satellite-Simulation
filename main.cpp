@@ -3,6 +3,7 @@
 #include "event_handler.hpp"
 #include "earth.hpp"
 #include "satellite.hpp"
+#include "resource.hpp"
 #include <thread>
 
 int Simulation::Width = 0;

@@ -4,9 +4,20 @@
 #include "earth.hpp"
 #include "satellite.hpp"
 
-std::mutex Simulation::Graphics::mutex;
-
-Simulation::Graphics::Graphics(HWND hWnd) : hResult(), factory(), renderTarget(), bmpEarth(), bmpSatellite(), dWriteFactory(), fontDefault() {
+Simulation::Graphics::Graphics(HWND hWnd) :
+    mutex(),
+    hResult(),
+    factory(),
+    renderTarget(),
+    bmpEarth(),
+    bmpSatellite(),
+    dWriteFactory(),
+    fontDefault(),
+    brush(),
+    strokeStyleTrajectory(),
+    colorTrajectoryLine(D2D1::ColorF(D2D1::ColorF::Gray)),
+    widthTrajectoryLine(10.0f)
+{
     // Create factory
     {
         hResult = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
@@ -79,17 +90,43 @@ Simulation::Graphics::Graphics(HWND hWnd) : hResult(), factory(), renderTarget()
             return;
         }
     }
+    // Create a brush
+    {
+        hResult = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0), &brush);
+        if (HasFailedLastOperation()) {
+            ShowError(L"Can't create graphics! (can't create brush)");
+            return;
+        }
+    }
+    // Create the trajectory stroke style
+    {
+        auto startCap = D2D1_CAP_STYLE_FLAT;
+        auto endCap = D2D1_CAP_STYLE_FLAT;
+        auto dashCap = D2D1_CAP_STYLE_FLAT;
+        auto lineJoin = D2D1_LINE_JOIN_BEVEL;
+        auto miterLimit = 10.0f;
+        auto dashStyle = D2D1_DASH_STYLE_DASH;
+        auto dashOffset = 0.0f;
+        auto props = D2D1::StrokeStyleProperties(startCap, endCap, dashCap, lineJoin, miterLimit, dashStyle, dashOffset);
+        hResult = factory->CreateStrokeStyle(props, nullptr, 0, &strokeStyleTrajectory);
+        if (HasFailedLastOperation()) {
+            ShowError(L"Can't create graphics! (can't create stroke style for the trajectory)");
+            return;
+        }
+    }
 }
 
 Simulation::Graphics::~Graphics() {
-    // Cleanup
     std::lock_guard<std::mutex> lock(mutex);
+    // Cleanup
     SafeRelease(&factory);
     SafeRelease(&renderTarget);
     SafeRelease(&bmpEarth);
     SafeRelease(&bmpSatellite);
     SafeRelease(&dWriteFactory);
     SafeRelease(&fontDefault);
+    SafeRelease(&brush);
+    SafeRelease(&strokeStyleTrajectory);
 }
 
 void Simulation::Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resourceId, ID2D1Bitmap** pBitmap) {
@@ -183,36 +220,46 @@ void Simulation::Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory
 }
 
 void Simulation::Graphics::Paint() {
-    if (factory != nullptr) {
-        // Start drawing
-        renderTarget->BeginDraw();
-        // Clear the screen with black background
-        renderTarget->Clear(D2D1::ColorF(0, 0, 0));
-        // Draw the earth
-        {
-            float x = (float)(Earth::X - Earth::Radius);
-            float y = (float)(Earth::Y - Earth::Radius);
-            float size = 2.0f * Earth::Radius;
-            auto rect = D2D1::RectF(x, y, x + size, y + size);
-            renderTarget->DrawBitmap(bmpEarth, rect);
-        }
-        // Draw the satellite
-        {
-            float x = (float)(Satellite::X - Satellite::Radius);
-            float y = (float)(Satellite::Y - Satellite::Radius);
-            float size = 2.0f * Satellite::Radius;
-            auto rect = D2D1::RectF(x, y, x + size, y + size);
-            auto center = D2D1::Point2F(Satellite::X, Satellite::Y);
-            auto rotation = D2D1::Matrix3x2F::Rotation(-Satellite::Rotation::AngleDegrees, center);
-            renderTarget->SetTransform(rotation);
-            renderTarget->DrawBitmap(bmpSatellite, rect);
-            renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-        }
-        // End drawing
-        hResult = renderTarget->EndDraw();
-        if (HasFailedLastOperation()) {
-            ShowError(L"Paint has failed for some reason!");
-        }
+    // Make sure that the program isn't currently shutting down!!!
+    if (renderTarget == nullptr) {
+        return;
+    }
+    // Start drawing
+    renderTarget->BeginDraw();
+    // Clear the screen with black background
+    renderTarget->Clear(D2D1::ColorF(0, 0, 0));
+    // Draw the earth
+    {
+        float x = (float)(Earth::X - Earth::Radius);
+        float y = (float)(Earth::Y - Earth::Radius);
+        float size = 2.0f * Earth::Radius;
+        auto rect = D2D1::RectF(x, y, x + size, y + size);
+        renderTarget->DrawBitmap(bmpEarth, rect);
+    }
+    // Draw the trajectory
+    {
+        brush->SetColor(colorTrajectoryLine);
+        auto center = D2D1::Point2F(Earth::X, Earth::Y);
+        auto radius = (float)Satellite::Rotation::RadiusTrajectory;
+        auto ellipse = D2D1::Ellipse(center, radius, radius);
+        renderTarget->DrawEllipse(ellipse, brush, widthTrajectoryLine, strokeStyleTrajectory);
+    }
+    // Draw the satellite
+    {
+        float x = (float)(Satellite::X - Satellite::Radius);
+        float y = (float)(Satellite::Y - Satellite::Radius);
+        float size = 2.0f * Satellite::Radius;
+        auto rect = D2D1::RectF(x, y, x + size, y + size);
+        auto center = D2D1::Point2F(Satellite::X, Satellite::Y);
+        auto rotation = D2D1::Matrix3x2F::Rotation(-Satellite::Rotation::AngleDegrees, center);
+        renderTarget->SetTransform(rotation);
+        renderTarget->DrawBitmap(bmpSatellite, rect);
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
+    // End drawing
+    hResult = renderTarget->EndDraw();
+    if (HasFailedLastOperation()) {
+        ShowError(L"Paint has failed!");
     }
 }
 

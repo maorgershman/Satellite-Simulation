@@ -21,14 +21,18 @@ namespace Simulation {
         ID2D1Bitmap* bmpSatellite;
         IDWriteFactory* dWriteFactory;
         IDWriteTextFormat* fontDefault;
+        ID2D1SolidColorBrush* brush;
+
+        ID2D1StrokeStyle* strokeStyleTrajectory;
+        D2D1::ColorF colorTrajectoryLine;
+        float widthTrajectoryLine;
 
         void LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resourceId, ID2D1Bitmap** pBitmap);
 
         template<class T>
         inline void SafeRelease(T** t) const;
     public:
-        // Fix thread racing when painting/cleaning up!
-        static std::mutex mutex;
+        std::mutex mutex; // It should fix thread racing when closing the program mid painting!
 
         Graphics(HWND hWnd);
         ~Graphics();
