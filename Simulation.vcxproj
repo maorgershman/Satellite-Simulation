@@ -123,10 +123,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="graphics.h" />
+    <ClInclude Include="event_handler.hpp" />
+    <ClInclude Include="graphics.hpp" />
     <ClInclude Include="main.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="event_handler.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

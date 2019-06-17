@@ -1,8 +1,11 @@
 #pragma once
 
-#include "graphics.h"
+#include "graphics.hpp"
+#include "event_handler.hpp"
 
 namespace Simulation {
+    extern int Width, Height;
+
     struct Main {
         static HWND InitializeWindow(HINSTANCE hInstance);
         static Graphics InitializeGraphics(HWND hWnd);

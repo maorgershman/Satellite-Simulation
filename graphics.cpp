@@ -1,4 +1,4 @@
-#include "graphics.h"
+#include "graphics.hpp"
 
 namespace Simulation {
     Graphics::Graphics(HWND hWnd) {
