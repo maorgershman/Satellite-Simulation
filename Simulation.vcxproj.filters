@@ -24,6 +24,9 @@
     <ClInclude Include="event_handler.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -35,5 +38,18 @@
     <ClCompile Include="event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Earth.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Satellite.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
