@@ -1,6 +1,10 @@
 #include "graphics.hpp"
 #include "main.hpp"
 #include "resource.hpp"
+#include "earth.hpp"
+#include "satellite.hpp"
+
+std::mutex Simulation::Graphics::mutex;
 
 Simulation::Graphics::Graphics(HWND hWnd) : hResult(), factory(), renderTarget(), bmpEarth(), bmpSatellite(), dWriteFactory(), fontDefault() {
     // Create factory
@@ -79,6 +83,7 @@ Simulation::Graphics::Graphics(HWND hWnd) : hResult(), factory(), renderTarget()
 
 Simulation::Graphics::~Graphics() {
     // Cleanup
+    std::lock_guard<std::mutex> lock(mutex);
     SafeRelease(&factory);
     SafeRelease(&renderTarget);
     SafeRelease(&bmpEarth);
@@ -175,6 +180,40 @@ void Simulation::Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory
     SafeRelease(&decoder);
     SafeRelease(&source);
     SafeRelease(&converter);
+}
+
+void Simulation::Graphics::Paint() {
+    if (factory != nullptr) {
+        // Start drawing
+        renderTarget->BeginDraw();
+        // Clear the screen with black background
+        renderTarget->Clear(D2D1::ColorF(0, 0, 0));
+        // Draw the earth
+        {
+            float x = (float)(Earth::X - Earth::Radius);
+            float y = (float)(Earth::Y - Earth::Radius);
+            float size = 2.0f * Earth::Radius;
+            auto rect = D2D1::RectF(x, y, x + size, y + size);
+            renderTarget->DrawBitmap(bmpEarth, rect);
+        }
+        // Draw the satellite
+        {
+            float x = (float)(Satellite::X - Satellite::Radius);
+            float y = (float)(Satellite::Y - Satellite::Radius);
+            float size = 2.0f * Satellite::Radius;
+            auto rect = D2D1::RectF(x, y, x + size, y + size);
+            auto center = D2D1::Point2F(Satellite::X, Satellite::Y);
+            auto rotation = D2D1::Matrix3x2F::Rotation(-Satellite::Rotation::AngleDegrees, center);
+            renderTarget->SetTransform(rotation);
+            renderTarget->DrawBitmap(bmpSatellite, rect);
+            renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        }
+        // End drawing
+        hResult = renderTarget->EndDraw();
+        if (HasFailedLastOperation()) {
+            ShowError(L"Paint has failed for some reason!");
+        }
+    }
 }
 
 const ID2D1Bitmap* const Simulation::Graphics::GetEarthBitmap() const {

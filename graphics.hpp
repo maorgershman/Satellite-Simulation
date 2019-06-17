@@ -7,6 +7,7 @@
 #include <dwrite.h>
 
 #include <string>
+#include <mutex>
 
 namespace Simulation {
 
@@ -26,8 +27,13 @@ namespace Simulation {
         template<class T>
         inline void SafeRelease(T** t) const;
     public:
+        // Fix thread racing when painting/cleaning up!
+        static std::mutex mutex;
+
         Graphics(HWND hWnd);
         ~Graphics();
+
+        void Paint();
 
         bool HasSucceededLastOperation() const;
         bool HasFailedLastOperation() const;

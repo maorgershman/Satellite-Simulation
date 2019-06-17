@@ -1,15 +1,20 @@
 #include "main.hpp"
+#include "graphics.hpp"
+#include "event_handler.hpp"
 #include "earth.hpp"
 #include "satellite.hpp"
+#include <thread>
 
-int Simulation::Width = 0, Simulation::Height = 0;
+int Simulation::Width = 0;
+int Simulation::Height = 0;
+bool Simulation::Running = true;
 
 int __stdcall wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int) {
     HWND hWnd = Simulation::Main::InitializeWindow(hInstance);
     Simulation::Graphics graphics = Simulation::Main::InitializeGraphics(hWnd);
     if (graphics.HasSucceededLastOperation()) {
         Simulation::Main::InitializeModules(graphics);
-        Simulation::Main::StartUpdating();
+        Simulation::Main::StartUpdating(graphics);
         Simulation::Main::MessageLoop();
     }
     return 0;
@@ -48,8 +53,17 @@ void Simulation::Main::InitializeModules(Graphics& graphics) {
     Satellite::Initialize(graphics.GetSatelliteBitmap());
 }
 
-void Simulation::Main::StartUpdating() {
+void Simulation::Main::StartUpdating(Graphics& graphics) {
+    std::thread updater(Tick, std::ref(graphics));
+    updater.detach();
+}
 
+void Simulation::Main::Tick(Graphics& graphics) {
+    while (Running) {
+        Satellite::Update();
+        graphics.Paint();
+        std::this_thread::sleep_for(std::chrono::microseconds((int)(1000000.0 / UpdatesPerSecond)));
+    }
 }
 
 void Simulation::Main::MessageLoop() {
