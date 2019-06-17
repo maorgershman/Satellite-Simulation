@@ -1,8 +1,11 @@
-#include "graphics.hpp"
+﻿#include "graphics.hpp"
 #include "main.hpp"
 #include "resource.hpp"
 #include "earth.hpp"
 #include "satellite.hpp"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 Simulation::Graphics::Graphics(HWND hWnd) :
     mutex(),
@@ -255,6 +258,79 @@ void Simulation::Graphics::Paint() {
         renderTarget->SetTransform(rotation);
         renderTarget->DrawBitmap(bmpSatellite, rect);
         renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
+    // Print information
+    {
+        float x = 20.0f, y = 10.0f;
+        // Draw angle of rotation
+        {
+            IDWriteTextLayout* layout = nullptr;
+            // Create layout
+            {
+                auto angR = std::to_wstring(Satellite::Rotation::AngleRadians / M_PI);
+                auto angD = std::to_wstring(Satellite::Rotation::AngleDegrees);
+                auto text = L"φ = " + angR + L"π (" + angD + L"°)";
+                hResult = dWriteFactory->CreateTextLayout(text.c_str(), text.length(), fontDefault, (float)Width, (float)Height, &layout);
+                if (layout == nullptr) {
+                    return;
+                }
+            }
+            brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, brush);
+            SafeRelease(&layout);
+            y += 50.0f;
+        }
+        // Draw period time
+        {
+            IDWriteTextLayout* layout = nullptr;
+            // Create layout
+            {
+                auto text = L"T = " + std::to_wstring(Satellite::Rotation::PeriodSeconds) + L"sec";
+                hResult = dWriteFactory->CreateTextLayout(text.c_str(), text.length(), fontDefault, (float)Width, (float)Height, &layout);
+                if (layout == nullptr) {
+                    return;
+                }
+            }
+            brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, brush);
+            SafeRelease(&layout);
+            y += 50.0f;
+        }
+        // Draw frequency
+        {
+            IDWriteTextLayout* layout = nullptr;
+            // Create layout
+            {
+                auto freq = std::to_wstring(1.0 / Satellite::Rotation::PeriodSeconds);
+                auto text = L"ƒ = " + freq + L"Hz";
+                hResult = dWriteFactory->CreateTextLayout(text.c_str(), text.length(), fontDefault, (float)Width, (float)Height, &layout);
+                if (layout == nullptr) {
+                    return;
+                }
+            }
+            brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, brush);
+            SafeRelease(&layout);
+            y += 50.0f;
+        }
+        // Draw angular velocity
+        {
+            IDWriteTextLayout* layout = nullptr;
+            // Create layout
+            {
+                auto vel1 = std::to_wstring(2.0 / Satellite::Rotation::PeriodSeconds);
+                auto vel2 = std::to_wstring(360.0 / Satellite::Rotation::PeriodSeconds);
+                auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
+                hResult = dWriteFactory->CreateTextLayout(text.c_str(), text.length(), fontDefault, (float)Width, (float)Height, &layout);
+                if (layout == nullptr) {
+                    return;
+                }
+            }
+            brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, brush);
+            SafeRelease(&layout);
+            y += 50.0f;
+        }
     }
     // End drawing
     hResult = renderTarget->EndDraw();
