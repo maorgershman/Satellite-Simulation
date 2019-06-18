@@ -18,6 +18,28 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\Earth.png" />
+    <Image Include="res\Satellite.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\event_handler.h" />
+    <ClInclude Include="include\graphics.h" />
+    <ClInclude Include="include\main.h" />
+    <ClInclude Include="include\module_earth.h" />
+    <ClInclude Include="include\module_satellite.h" />
+    <ClInclude Include="include\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\event_handler.cpp" />
+    <ClCompile Include="src\graphics.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\module_earth.cpp" />
+    <ClCompile Include="src\module_satellite.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{E11839DA-0E11-4D91-841D-6FE490EB01E4}</ProjectGuid>
@@ -83,13 +105,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level2</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>d2d1.lib;windowscodecs.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -124,28 +148,6 @@
       <AdditionalDependencies>d2d1.lib;windowscodecs.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="earth.hpp" />
-    <ClInclude Include="event_handler.hpp" />
-    <ClInclude Include="graphics.hpp" />
-    <ClInclude Include="main.hpp" />
-    <ClInclude Include="resource.hpp" />
-    <ClInclude Include="satellite.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="earth.cpp" />
-    <ClCompile Include="event_handler.cpp" />
-    <ClCompile Include="graphics.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="satellite.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Earth.png" />
-    <Image Include="Satellite.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Resource.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

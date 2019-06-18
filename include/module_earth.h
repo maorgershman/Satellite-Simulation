@@ -1,10 +1,11 @@
 #pragma once
-#include "graphics.hpp"
+
+#include "main.h"
 
 namespace Simulation {
     struct Earth {
-        static int Radius, RadiusOriginal;
-        static double X, Y;
+        static long double Radius;
+        static long double X, Y;
 
         static void Initialize(const ID2D1Bitmap* const bmp);
     };
