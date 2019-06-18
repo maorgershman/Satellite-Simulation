@@ -30,6 +30,9 @@ namespace Simulation {
             IDWriteTextFormat* textFormatDefault;
             ID2D1SolidColorBrush* brush;
             ID2D1StrokeStyle* strokeStyleSatelliteTrajectoryLine;
+            IDWriteTextLayout* textLayoutPeriod;
+            IDWriteTextLayout* textLayoutFrequency;
+            IDWriteTextLayout* textLayoutAngularSpeed;
         } d2d1;
 
         inline void CreateFactory();
@@ -50,6 +53,11 @@ namespace Simulation {
         inline void CreateBrush();
 
         inline void CreateSatelliteTrajectoryLineStrokeStyle();
+
+        inline void CreateTextLayouts();
+        inline void CreateTextLayoutPeriod();
+        inline void CreateTextLayoutFrequency();
+        inline void CreateTextLayoutAngularSpeed();
 
         void DrawEarth() const; 
         void DrawTrajectory() const;

@@ -19,6 +19,9 @@ namespace Simulation {
                             CreateBrush();
                             if (Success()) {
                                 CreateSatelliteTrajectoryLineStrokeStyle();
+                                if (Success()) {
+                                    CreateTextLayouts();
+                                }
                             }
                         }
                     }
@@ -36,6 +39,9 @@ namespace Simulation {
         SafeRelease(&d2d1.textFormatDefault);
         SafeRelease(&d2d1.brush);
         SafeRelease(&d2d1.strokeStyleSatelliteTrajectoryLine);
+        SafeRelease(&d2d1.textLayoutPeriod);
+        SafeRelease(&d2d1.textLayoutFrequency);
+        SafeRelease(&d2d1.textLayoutAngularSpeed);
     }
 
     //////////////////////
@@ -160,6 +166,34 @@ namespace Simulation {
         hResult = d2d1.factory->CreateStrokeStyle(props, NULL, 0, &d2d1.strokeStyleSatelliteTrajectoryLine);
     }
 
+    void Graphics::CreateTextLayouts() {
+        CreateTextLayoutPeriod();
+        if (Success()) {
+            CreateTextLayoutFrequency();
+            if (Success()) {
+                CreateTextLayoutAngularSpeed();
+            }
+        }
+    }
+
+    void Graphics::CreateTextLayoutPeriod() {
+        auto text = L"T = " + std::to_wstring(Satellite::PeriodSeconds) + L"sec";
+        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutPeriod);
+    }
+    
+    void Graphics::CreateTextLayoutFrequency() {
+        auto freq = std::to_wstring(1.0l / Satellite::PeriodSeconds);
+        auto text = L"ƒ = " + freq + L"Hz";
+        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutFrequency);
+    }
+
+    void Graphics::CreateTextLayoutAngularSpeed() {
+        auto vel1 = std::to_wstring(2.0l / Satellite::PeriodSeconds);
+        auto vel2 = std::to_wstring(360.0l / Satellite::PeriodSeconds);
+        auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
+        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutAngularSpeed);
+    }
+
     /////////////////////
 
     void Graphics::Draw() {
@@ -211,48 +245,23 @@ namespace Simulation {
     }
 
     void Graphics::DrawInfoAngle(float x, float y) const {
-        IDWriteTextLayout* layout = NULL;
         auto angR = std::to_wstring(Satellite::AngleRadians / PI);
         auto angD = std::to_wstring(Satellite::AngleDegrees);
         auto text = L"φ = " + angR + L"π (" + angD + L"°)";
-        d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &layout);
-        if (layout != NULL) {
-            d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, d2d1.brush);
-        }
-        SafeRelease(&layout);
+        auto rect = D2D1::RectF(x, y, (float)Width, (float)Height);
+        d2d1.renderTarget->DrawTextW(text.c_str(), text.length(), d2d1.textFormatDefault, rect, d2d1.brush);
     }
 
     void Graphics::DrawInfoPeriod(float x, float y) const {
-        IDWriteTextLayout* layout = NULL;
-        auto text = L"T = " + std::to_wstring(Satellite::PeriodSeconds) + L"sec";
-        d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &layout);
-        if (layout != NULL) {
-            d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, d2d1.brush);
-        }
-        SafeRelease(&layout);
+        d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), d2d1.textLayoutPeriod, d2d1.brush);
     }
 
     void Graphics::DrawInfoFrequency(float x, float y) const {
-        IDWriteTextLayout* layout = NULL;
-        auto freq = std::to_wstring(1.0l / Satellite::PeriodSeconds);
-        auto text = L"ƒ = " + freq + L"Hz";
-        d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &layout);
-        if (layout != NULL) {
-            d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, d2d1.brush);
-        }
-        SafeRelease(&layout);
+        d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), d2d1.textLayoutFrequency, d2d1.brush);
     }
 
     void Graphics::DrawInfoAngularSpeed(float x, float y) const {
-        IDWriteTextLayout* layout = NULL;
-        auto vel1 = std::to_wstring(2.0l / Satellite::PeriodSeconds);
-        auto vel2 = std::to_wstring(360.0l / Satellite::PeriodSeconds);
-        auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
-        d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &layout);
-        if (layout != NULL) {
-            d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), layout, d2d1.brush);
-        }
-        SafeRelease(&layout);
+        d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), d2d1.textLayoutAngularSpeed, d2d1.brush);
     }
 
     /////////////////////
