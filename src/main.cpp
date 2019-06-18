@@ -53,17 +53,15 @@ namespace Simulation {
     }
     
     void Main::StartTicking(Graphics& graphics) const {
-        std::thread ticker(Tick, std::ref(graphics), hWnd);
+        std::thread ticker([this, &graphics] {
+            while (Running) {
+                Satellite::Update();
+                graphics.Draw();
+                std::this_thread::sleep_for(TickDelay);
+            }
+            SendMessage(hWnd, WM_CLOSE, NULL, NULL);
+        });
         ticker.detach();
-    }
-
-    void Main::Tick(Graphics& graphics, HWND hWnd) {
-        while (Running) {
-            Satellite::Update();
-            graphics.Draw();
-            std::this_thread::sleep_for(TickDelay);
-        }
-        SendMessage(hWnd, WM_CLOSE, NULL, NULL);
     }
 
     void Main::MessageLoop() const {

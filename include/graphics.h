@@ -55,10 +55,10 @@ namespace Simulation {
         void DrawTrajectory() const;
         void DrawSatellite() const;
         void DrawInfo() const;
-        void DrawInfoAngle(IDWriteTextLayout* layout, float x, float y) const;
-        void DrawInfoPeriod(IDWriteTextLayout* layout, float x, float y) const;
-        void DrawInfoFrequency(IDWriteTextLayout* layout, float x, float y) const;
-        void DrawInfoAngularSpeed(IDWriteTextLayout* layout, float x, float y) const;
+        void DrawInfoAngle(float x, float y) const;
+        void DrawInfoPeriod(float x, float y) const;
+        void DrawInfoFrequency(float x, float y) const;
+        void DrawInfoAngularSpeed(float x, float y) const;
 
         template<class T> 
         inline void SafeRelease(T** t) const;

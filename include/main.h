@@ -23,7 +23,7 @@ namespace Simulation {
 
     class Main {
     private:
-        static constexpr auto TicksPerSecond = 120;
+        static constexpr auto TicksPerSecond = 200;
         static constexpr auto TickDelay = std::chrono::microseconds((int)(1000000.0 / TicksPerSecond));
 
         HINSTANCE hInstance;
@@ -32,7 +32,6 @@ namespace Simulation {
         void InitializeWindow();
         void InitializeModules(const ID2D1Bitmap* const bmpEarth, const ID2D1Bitmap* const bmpSatellite) const;
         void StartTicking(Graphics& graphics) const;
-        static void Tick(Graphics& graphics, HWND hWnd);
         void MessageLoop() const;
     public:
         int ExitCode;
