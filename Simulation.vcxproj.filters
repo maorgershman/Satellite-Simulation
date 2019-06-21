@@ -63,5 +63,8 @@
     <ClCompile Include="src\module_earth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\start.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

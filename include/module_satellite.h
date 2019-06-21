@@ -14,7 +14,7 @@ namespace Simulation {
         static long double AngleDegrees, AngleRadians;
         static Timepoint RotationBeginTimepoint;
 
-        static void Initialize(const ID2D1Bitmap* const bmp);
+        static void Initialize(const ID2D1Bitmap* const);
 
         static void Update();
     };

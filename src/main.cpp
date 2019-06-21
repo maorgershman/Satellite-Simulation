@@ -3,64 +3,83 @@
 #include "../include/graphics.h"
 #include "../include/module_earth.h"
 #include "../include/module_satellite.h"
-
 #include <thread>
-
-int __stdcall wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int) {
-    Simulation::Main main(hInstance);
-    return main.ExitCode;
-}
 
 namespace Simulation {
     int Width, Height;
     bool Running;
+    Main MainInstance;
+    Graphics* GraphicsInstance;
 
-    Main::Main(HINSTANCE hInstance) : hInstance(NULL), hWnd(NULL), ExitCode(0) {
-        this->hInstance = hInstance;
-        InitializeWindow();
+    int Main::Run(HINSTANCE hInstance) {
+        // Create the window
+        InitializeWindow(hInstance);
+
+        // Create the graphics instance, scope is critical because of the destructor!
         Graphics graphics(hWnd);
+        GraphicsInstance = &graphics;
+        
         if (graphics.Success()) {
-            InitializeModules(graphics.GetEarthBitmap(), graphics.GetSatelliteBitmap());
             Running = true;
-            StartTicking(graphics);
+
+            // Set the earth and satellite's initial size and position
+            InitializeModules();
+
+            // Start to update and repaint
+            StartTicking();
+
+            // Listen to events and keep the main thread alive.
             MessageLoop();
+            
+            // Success
+            return 0;
         }
-        else {
-            ExitCode = 1;
-        }
+
+        // Failure
+        return 1;
     }
 
-    void Main::InitializeWindow() {
+    void Main::InitializeWindow(HINSTANCE hInstance) {
+        // Create the window class
         WNDCLASS wc = { NULL };
         wc.hInstance = hInstance;
         wc.lpszClassName = L"Simulation";
         wc.hbrBackground = CreateSolidBrush(0x000000); // Black background
-        wc.lpfnWndProc = EventHandler::WindowProc;
+        wc.lpfnWndProc = EventHandler::WindowProc;     // Register the event handler
         RegisterClass(&wc);
+
+        // Create the actual window, full screen
         hWnd = CreateWindow(wc.lpszClassName, NULL, WS_VISIBLE | WS_MAXIMIZE | WS_POPUP, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
 
+        // Save the screen size
         RECT rect;
-        GetWindowRect(GetDesktopWindow(), &rect); // Save the screen size
+        GetWindowRect(GetDesktopWindow(), &rect);
         Width = rect.right;
         Height = rect.bottom;
         
-        ShowCursor(false); // Hide the cursor
+        // Hide the cursor
+        ShowCursor(false);
     }
 
-    void Main::InitializeModules(const ID2D1Bitmap* const bmpEarth, const ID2D1Bitmap* const bmpSatellite) const {
-        Earth::Initialize(bmpEarth);
-        Satellite::Initialize(bmpSatellite);
+    void Main::InitializeModules() const {
+        Earth::Initialize(GraphicsInstance->GetEarthBitmap());
+        Satellite::Initialize(GraphicsInstance->GetSatelliteBitmap());
     }
     
-    void Main::StartTicking(Graphics& graphics) const {
-        std::thread ticker([this, &graphics] {
+    void Main::StartTicking() const {
+        std::thread ticker([this] {
+            // As long as the simulation is running:
             while (Running) {
                 Satellite::Update();
-                graphics.Draw();
+                GraphicsInstance->Draw();
                 std::this_thread::sleep_for(TickDelay);
             }
+
+            // Important! Exit the main thread and close the window!
             SendMessage(hWnd, WM_CLOSE, NULL, NULL);
         });
+
+        // Important! Detach the thread
         ticker.detach();
     }
 

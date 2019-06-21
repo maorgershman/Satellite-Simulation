@@ -4,6 +4,8 @@
 #include <wincodec.h>
 #include <dwrite.h>
 
+#include <string>
+
 namespace Simulation {
     class Graphics {
     private:
@@ -35,46 +37,40 @@ namespace Simulation {
             IDWriteTextLayout* textLayoutAngularSpeed;
         } d2d1;
 
+        template<class T>
+        inline void SafeRelease(T**) const;
         inline void CreateFactory();
-        
         inline void CreateRenderTarget(HWND hWnd);
-
         inline void LoadModules();
-        inline IWICImagingFactory* CreateWICFactory();
-        inline void LoadEarthModule(IWICImagingFactory* wicFactory);
-        inline void LoadSatelliteModule(IWICImagingFactory* wicFactory);
-        void LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resId, ID2D1Bitmap** pBmp);
-        const std::pair<void*, DWORD> GetResourcePointerAndSize(int resId);
-
         inline void CreateDWriteFactory();
-        
         inline void CreateDefaultTextFormat();
-
         inline void CreateBrush();
-
         inline void CreateSatelliteTrajectoryLineStrokeStyle();
+        inline void CreateTextLayout(std::wstring, IDWriteTextLayout**);
+        inline void UpdateTextLayoutPeriod();
+        inline void UpdateTextLayoutFrequency();
+        inline void UpdateTextLayoutAngularSpeed();
+        inline void LoadEarthModule(IWICImagingFactory*);
+        inline void LoadSatelliteModule(IWICImagingFactory*);
 
-        inline void CreateTextLayouts();
-        inline void CreateTextLayoutPeriod();
-        inline void CreateTextLayoutFrequency();
-        inline void CreateTextLayoutAngularSpeed();
-
+        void LoadBitmapFromResource(IWICImagingFactory*, int, ID2D1Bitmap**);
         void DrawEarth() const; 
         void DrawTrajectory() const;
         void DrawSatellite() const;
         void DrawInfo() const;
-        void DrawInfoAngle(float x, float y) const;
-        void DrawInfoPeriod(float x, float y) const;
-        void DrawInfoFrequency(float x, float y) const;
-        void DrawInfoAngularSpeed(float x, float y) const;
+        void DrawInfoAngle(float, float) const;
+        void DrawInfoPeriod(float, float) const;
+        void DrawInfoFrequency(float, float) const;
+        void DrawInfoAngularSpeed(float, float) const;
 
-        template<class T> 
-        inline void SafeRelease(T** t) const;
+        inline IWICImagingFactory* CreateWICFactory();
+        const std::pair<void*, DWORD> GetResourcePointerAndSize(int);
     public:
-        Graphics(HWND hWnd);
+        Graphics(HWND);
         ~Graphics();
 
         void Draw();
+        void UpdateTextLayouts();
 
         const ID2D1Bitmap* const GetEarthBitmap() const;
         const ID2D1Bitmap* const GetSatelliteBitmap() const;

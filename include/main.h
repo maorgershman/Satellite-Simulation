@@ -16,26 +16,24 @@ namespace Simulation {
         return std::chrono::high_resolution_clock::now();
     }
 
-    extern int Width, Height;
-    extern bool Running;
+    class Main {
+        static constexpr auto TicksPerSecond = 200;
+        static constexpr auto TickDelay = std::chrono::microseconds((int)(1000000.0 / TicksPerSecond));
+    private:
+        HWND hWnd;
+
+        inline void InitializeWindow(HINSTANCE);
+        inline void InitializeModules() const;
+        inline void StartTicking() const;
+        inline void MessageLoop() const;
+    public:
+        int Run(HINSTANCE);
+    };
 
     class Graphics;
 
-    class Main {
-    private:
-        static constexpr auto TicksPerSecond = 200;
-        static constexpr auto TickDelay = std::chrono::microseconds((int)(1000000.0 / TicksPerSecond));
-
-        HINSTANCE hInstance;
-        HWND hWnd;
-
-        void InitializeWindow();
-        void InitializeModules(const ID2D1Bitmap* const bmpEarth, const ID2D1Bitmap* const bmpSatellite) const;
-        void StartTicking(Graphics& graphics) const;
-        void MessageLoop() const;
-    public:
-        int ExitCode;
-
-        Main(HINSTANCE hInstance);
-    };
+    extern int Width, Height;
+    extern bool Running;
+    extern Main MainInstance;
+    extern Graphics* GraphicsInstance;
 }

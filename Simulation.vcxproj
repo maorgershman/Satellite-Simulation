@@ -39,6 +39,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\module_earth.cpp" />
     <ClCompile Include="src\module_satellite.cpp" />
+    <ClCompile Include="src\start.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

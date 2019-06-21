@@ -7,27 +7,13 @@
 namespace Simulation {
     Graphics::Graphics(HWND hWnd) : hResult(S_OK), d2d1() {
         CreateFactory();
-        if (Success()) {
-            CreateRenderTarget(hWnd);
-            if (Success()) {
-                LoadModules();
-                if (Success()) {
-                    CreateDWriteFactory();
-                    if (Success()) {
-                        CreateDefaultTextFormat();
-                        if (Success()) {
-                            CreateBrush();
-                            if (Success()) {
-                                CreateSatelliteTrajectoryLineStrokeStyle();
-                                if (Success()) {
-                                    CreateTextLayouts();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        CreateRenderTarget(hWnd);
+        LoadModules();
+        CreateDWriteFactory();
+        CreateDefaultTextFormat();
+        CreateBrush();
+        CreateSatelliteTrajectoryLineStrokeStyle();
+        UpdateTextLayouts();
     }
 
     Graphics::~Graphics() {
@@ -44,158 +30,6 @@ namespace Simulation {
         SafeRelease(&d2d1.textLayoutAngularSpeed);
     }
 
-    //////////////////////
-
-    void Graphics::CreateFactory() {
-        hResult = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2d1.factory);
-    }
-
-    void Graphics::CreateRenderTarget(HWND hWnd) {
-        auto size = D2D1::SizeU(Width, Height);
-        auto props1 = D2D1::RenderTargetProperties();
-        auto props2 = D2D1::HwndRenderTargetProperties(hWnd, size);
-        hResult = d2d1.factory->CreateHwndRenderTarget(props1, props2, &d2d1.renderTarget);
-    }
-
-    void Graphics::LoadModules() {
-        auto wicFactory = CreateWICFactory();
-        if (Success()) {
-            LoadEarthModule(wicFactory);
-            if (Success()) {
-                LoadSatelliteModule(wicFactory);
-            }
-        }
-        SafeRelease(&wicFactory);
-    }
-
-    IWICImagingFactory* Graphics::CreateWICFactory() {
-        IWICImagingFactory* wicFactory = NULL;
-        hResult = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (void**)& wicFactory);
-        return wicFactory;
-    }
-
-    void Graphics::LoadEarthModule(IWICImagingFactory* wicFactory) {
-        LoadBitmapFromResource(wicFactory, IMG_EARTH, &d2d1.bmpEarth);
-    }
-
-    void Graphics::LoadSatelliteModule(IWICImagingFactory* wicFactory) {
-        LoadBitmapFromResource(wicFactory, IMG_SATELLITE, &d2d1.bmpSatellite);
-    }
-
-    void Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resId, ID2D1Bitmap** pBmp) {
-        auto resInfo = GetResourcePointerAndSize(resId);
-        // Create a WIC stream to map onto the memory
-        IWICStream* stream = NULL;
-        hResult = wicFactory->CreateStream(&stream);
-        if (Success()) {
-            // Initialize the stream with the memory pointer and size
-            hResult = stream->InitializeFromMemory(reinterpret_cast<BYTE*>(resInfo.first), resInfo.second);
-            if (Success()) {
-                // Create a decoder for the stream
-                IWICBitmapDecoder* decoder = NULL;
-                hResult = wicFactory->CreateDecoderFromStream(stream, NULL, WICDecodeMetadataCacheOnLoad, &decoder);
-                if (Success()) {
-                    // Create the initial frame
-                    IWICBitmapFrameDecode* source = NULL;
-                    hResult = decoder->GetFrame(0, &source);
-                    if (Success()) {
-                        // Create a format converter
-                        IWICFormatConverter* converter = NULL;
-                        hResult = wicFactory->CreateFormatConverter(&converter);
-                        if (Success()) {
-                            // Convert the image format to 32bppPBGRA
-                            hResult = converter->Initialize(source, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0, WICBitmapPaletteTypeMedianCut);
-                            if (Success()) {
-                                // Create a Direct2D bitmap from the WIC bitmap
-                                hResult = d2d1.renderTarget->CreateBitmapFromWicBitmap(converter, NULL, pBmp);
-                            }
-                        }
-                        SafeRelease(&converter);
-                    }
-                    SafeRelease(&source);
-                }
-                SafeRelease(&decoder);
-            }
-        }
-        SafeRelease(&stream);
-    }
-
-    const std::pair<void*, DWORD> Graphics::GetResourcePointerAndSize(int resId) {
-        // Locate the resource
-        HRSRC imageResHandle = FindResource(NULL, MAKEINTRESOURCE(resId), L"Image");
-        if (imageResHandle != NULL) {
-            // Load the resource
-            HGLOBAL imageResDataHandle = LoadResource(NULL, imageResHandle);
-            if (imageResDataHandle != NULL) {
-                // Lock it to get a system memory pointer
-                void* pImageFile = LockResource(imageResDataHandle);
-                if (pImageFile != NULL) {
-                    // Calculate the size of the resource
-                    DWORD imageFileSize = SizeofResource(NULL, imageResHandle);
-                    if (imageFileSize > 0) {
-                        hResult = S_OK;
-                        return std::pair(pImageFile, imageFileSize);
-                    }
-                }
-            }
-        }
-        hResult = E_FAIL;
-        return std::pair(nullptr, 0);
-    }
-
-    void Graphics::CreateDWriteFactory() {
-        hResult = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown * *>(&d2d1.dWriteFactory));
-    }
-
-    void Graphics::CreateDefaultTextFormat() {
-        hResult = d2d1.dWriteFactory->CreateTextFormat(DefaultFontFamily, NULL, DefaultFontWeight, DefaultFontStyle, DefaultFontStretch, DefaultFontSize, L"", &d2d1.textFormatDefault);
-    }
-
-    void Graphics::CreateBrush() {
-        hResult = d2d1.renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0), &d2d1.brush);
-    }
-
-    void Graphics::CreateSatelliteTrajectoryLineStrokeStyle() {
-        auto startCap = D2D1_CAP_STYLE_FLAT;
-        auto endCap = D2D1_CAP_STYLE_FLAT;
-        auto dashCap = D2D1_CAP_STYLE_FLAT;
-        auto lineJoin = D2D1_LINE_JOIN_BEVEL;
-        auto miterLimit = 10.0f;
-        auto dashOffset = 0.0f;
-        auto props = D2D1::StrokeStyleProperties(startCap, endCap, dashCap, lineJoin, miterLimit, SatelliteTrajectoryLineDashStyle, dashOffset);
-        hResult = d2d1.factory->CreateStrokeStyle(props, NULL, 0, &d2d1.strokeStyleSatelliteTrajectoryLine);
-    }
-
-    void Graphics::CreateTextLayouts() {
-        CreateTextLayoutPeriod();
-        if (Success()) {
-            CreateTextLayoutFrequency();
-            if (Success()) {
-                CreateTextLayoutAngularSpeed();
-            }
-        }
-    }
-
-    void Graphics::CreateTextLayoutPeriod() {
-        auto text = L"T = " + std::to_wstring(Satellite::PeriodSeconds) + L"sec";
-        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutPeriod);
-    }
-    
-    void Graphics::CreateTextLayoutFrequency() {
-        auto freq = std::to_wstring(1.0l / Satellite::PeriodSeconds);
-        auto text = L"ƒ = " + freq + L"Hz";
-        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutFrequency);
-    }
-
-    void Graphics::CreateTextLayoutAngularSpeed() {
-        auto vel1 = std::to_wstring(2.0l / Satellite::PeriodSeconds);
-        auto vel2 = std::to_wstring(360.0l / Satellite::PeriodSeconds);
-        auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
-        hResult = d2d1.dWriteFactory->CreateTextLayout(text.c_str(), text.length(), d2d1.textFormatDefault, (float)Width, (float)Height, &d2d1.textLayoutAngularSpeed);
-    }
-
-    /////////////////////
-
     void Graphics::Draw() {
         d2d1.renderTarget->BeginDraw();
         d2d1.renderTarget->Clear(D2D1::ColorF(0, 0, 0)); // Black background
@@ -205,6 +39,89 @@ namespace Simulation {
         DrawInfo();
         d2d1.renderTarget->EndDraw();
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    void Graphics::CreateFactory() {
+        if (Success()) {
+            auto type = D2D1_FACTORY_TYPE_SINGLE_THREADED;
+            hResult = D2D1CreateFactory(type, &d2d1.factory);
+        }
+    }
+
+    void Graphics::CreateRenderTarget(HWND hWnd) {
+        if (Success()) {
+            auto size = D2D1::SizeU(Width, Height);
+            auto props1 = D2D1::RenderTargetProperties();
+            auto props2 = D2D1::HwndRenderTargetProperties(hWnd, size);
+            hResult = d2d1.factory->CreateHwndRenderTarget(props1, props2, &d2d1.renderTarget);
+        }
+    }
+
+    void Graphics::LoadModules() {
+        if (Success()) {
+            auto wicFactory = CreateWICFactory();
+            LoadEarthModule(wicFactory);
+            LoadSatelliteModule(wicFactory);
+            SafeRelease(&wicFactory);
+        }
+    }
+    
+    void Graphics::CreateDWriteFactory() {
+        if (Success()) {
+            auto type = DWRITE_FACTORY_TYPE_SHARED;
+            auto uuid = __uuidof(IDWriteFactory);
+            auto factory = reinterpret_cast<IUnknown * *>(&d2d1.dWriteFactory);
+            hResult = DWriteCreateFactory(type, uuid, factory);
+        }
+    }
+
+    void Graphics::CreateDefaultTextFormat() {
+        if (Success()) {
+            auto family = DefaultFontFamily;
+            auto weight = DefaultFontWeight;
+            auto style = DefaultFontStyle;
+            auto stretch = DefaultFontStretch;
+            auto size = DefaultFontSize;
+            hResult = d2d1.dWriteFactory->CreateTextFormat(family, NULL, weight, style, stretch, size, L"", &d2d1.textFormatDefault);
+        }
+    }
+
+    void Graphics::CreateBrush() {
+        if (Success()) {
+            auto color = D2D1::ColorF(0, 0); // Black transparent
+            hResult = d2d1.renderTarget->CreateSolidColorBrush(color, &d2d1.brush);
+        }
+    }
+
+    void Graphics::CreateSatelliteTrajectoryLineStrokeStyle() {
+        if (Success()) {
+            auto startCap = D2D1_CAP_STYLE_FLAT;
+            auto endCap = D2D1_CAP_STYLE_FLAT;
+            auto dashCap = D2D1_CAP_STYLE_FLAT;
+            auto lineJoin = D2D1_LINE_JOIN_BEVEL;
+            auto miterLimit = 10.0f;
+            auto dashStyle = SatelliteTrajectoryLineDashStyle;
+            auto dashOffset = 0.0f;
+            auto props = D2D1::StrokeStyleProperties(startCap, endCap, dashCap, lineJoin, miterLimit, dashStyle, dashOffset);
+            hResult = d2d1.factory->CreateStrokeStyle(props, NULL, 0, &d2d1.strokeStyleSatelliteTrajectoryLine);
+        }
+    }
+
+    void Graphics::UpdateTextLayouts() {
+        if (Success()) {
+            // Cleanup the previous layouts
+            SafeRelease(&d2d1.textLayoutPeriod);
+            SafeRelease(&d2d1.textLayoutFrequency);
+            SafeRelease(&d2d1.textLayoutAngularSpeed);
+
+            UpdateTextLayoutPeriod();
+            UpdateTextLayoutFrequency();
+            UpdateTextLayoutAngularSpeed();
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     void Graphics::DrawEarth() const {
         auto x = Earth::X - Earth::Radius;
@@ -244,6 +161,134 @@ namespace Simulation {
         DrawInfoAngularSpeed(x, y + 150.0f);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    IWICImagingFactory* Graphics::CreateWICFactory() {
+        if (Success()) {
+            IWICImagingFactory* wicFactory = NULL;
+            auto clsid = CLSID_WICImagingFactory;
+            auto context = CLSCTX_INPROC_SERVER;
+            auto iid = IID_IWICImagingFactory;
+            hResult = CoCreateInstance(clsid, NULL, context, iid, (void**)& wicFactory);
+            return wicFactory;
+        }
+        return nullptr;
+    }
+
+    void Graphics::LoadEarthModule(IWICImagingFactory* wicFactory) {
+        if (Success()) {
+            LoadBitmapFromResource(wicFactory, IMG_EARTH, &d2d1.bmpEarth);
+        }
+    }
+
+    void Graphics::LoadSatelliteModule(IWICImagingFactory* wicFactory) {
+        if (Success()) {
+            LoadBitmapFromResource(wicFactory, IMG_SATELLITE, &d2d1.bmpSatellite);
+        }
+    }
+
+    void Graphics::LoadBitmapFromResource(IWICImagingFactory* wicFactory, int resId, ID2D1Bitmap** pBmp) {
+        auto resInfo = GetResourcePointerAndSize(resId);
+        // Create a WIC stream to map onto the memory
+        IWICStream* stream = NULL;
+        hResult = wicFactory->CreateStream(&stream);
+        if (Success()) {
+            // Initialize the stream with the memory pointer and size
+            auto pbBuffer = reinterpret_cast<BYTE*>(resInfo.first);
+            auto bSize = resInfo.second;
+            hResult = stream->InitializeFromMemory(pbBuffer, bSize);
+            if (Success()) {
+                // Create a decoder for the stream
+                IWICBitmapDecoder* decoder = NULL;
+                auto options = WICDecodeMetadataCacheOnLoad;
+                hResult = wicFactory->CreateDecoderFromStream(stream, NULL, options, &decoder);
+                if (Success()) {
+                    // Create the initial frame
+                    IWICBitmapFrameDecode* source = NULL;
+                    hResult = decoder->GetFrame(0, &source);
+                    if (Success()) {
+                        // Create a format converter
+                        IWICFormatConverter* converter = NULL;
+                        hResult = wicFactory->CreateFormatConverter(&converter);
+                        if (Success()) {
+                            // Convert the image format to 32bppPBGRA
+                            auto format = GUID_WICPixelFormat32bppPBGRA;
+                            auto dither = WICBitmapDitherTypeNone;
+                            auto palette = WICBitmapPaletteTypeMedianCut;
+                            hResult = converter->Initialize(source, format, dither, NULL, 0, palette);
+                            if (Success()) {
+                                // Create a Direct2D bitmap from the WIC bitmap
+                                hResult = d2d1.renderTarget->CreateBitmapFromWicBitmap(converter, NULL, pBmp);
+                            }
+                        }
+                        SafeRelease(&converter);
+                    }
+                    SafeRelease(&source);
+                }
+                SafeRelease(&decoder);
+            }
+        }
+        SafeRelease(&stream);
+    }
+
+    const std::pair<void*, DWORD> Graphics::GetResourcePointerAndSize(int resId) {
+        // Locate the resource
+        HRSRC imageResHandle = FindResource(NULL, MAKEINTRESOURCE(resId), L"Image");
+        if (imageResHandle != NULL) {
+            // Load the resource
+            HGLOBAL imageResDataHandle = LoadResource(NULL, imageResHandle);
+            if (imageResDataHandle != NULL) {
+                // Lock it to get a system memory pointer
+                void* pImageFile = LockResource(imageResDataHandle);
+                if (pImageFile != NULL) {
+                    // Calculate the size of the resource
+                    DWORD imageFileSize = SizeofResource(NULL, imageResHandle);
+                    if (imageFileSize > 0) {
+                        hResult = S_OK;
+                        return std::pair(pImageFile, imageFileSize);
+                    }
+                }
+            }
+        }
+        hResult = E_FAIL;
+        return std::pair(nullptr, 0);
+    }
+
+    void Graphics::CreateTextLayout(std::wstring text, IDWriteTextLayout** pLayout) {
+        auto cstr = text.c_str();
+        auto len = text.length();
+        auto format = d2d1.textFormatDefault;
+        auto width = (float)Width;
+        auto height = (float)Height;
+        hResult = d2d1.dWriteFactory->CreateTextLayout(cstr, len, format, width, height, pLayout);
+    }
+
+    void Graphics::UpdateTextLayoutPeriod() {
+        if (Success()) {
+            auto text = L"T = " + std::to_wstring(Satellite::PeriodSeconds) + L"sec";
+            CreateTextLayout(text, &d2d1.textLayoutPeriod);
+        }
+    }
+
+    void Graphics::UpdateTextLayoutFrequency() {
+        if (Success()) {
+            auto freq = std::to_wstring(1.0l / Satellite::PeriodSeconds);
+            auto text = L"ƒ = " + freq + L"Hz";
+            CreateTextLayout(text, &d2d1.textLayoutFrequency);
+        }
+    }
+
+    void Graphics::UpdateTextLayoutAngularSpeed() {
+        if (Success()) {
+            auto vel1 = std::to_wstring(2.0l / Satellite::PeriodSeconds);
+            auto vel2 = std::to_wstring(360.0l / Satellite::PeriodSeconds);
+            auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
+            CreateTextLayout(text, &d2d1.textLayoutAngularSpeed);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
     void Graphics::DrawInfoAngle(float x, float y) const {
         auto angR = std::to_wstring(Satellite::AngleRadians / PI);
         auto angD = std::to_wstring(Satellite::AngleDegrees);
@@ -264,7 +309,7 @@ namespace Simulation {
         d2d1.renderTarget->DrawTextLayout(D2D1::Point2F(x, y), d2d1.textLayoutAngularSpeed, d2d1.brush);
     }
 
-    /////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     const ID2D1Bitmap* const Simulation::Graphics::GetEarthBitmap() const {
         return d2d1.bmpEarth;
