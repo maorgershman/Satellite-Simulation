@@ -28,6 +28,7 @@
   <ItemGroup>
     <ClInclude Include="include\event_handler.h" />
     <ClInclude Include="include\graphics.h" />
+    <ClInclude Include="include\magnetic_field_circular.h" />
     <ClInclude Include="include\main.h" />
     <ClInclude Include="include\module_earth.h" />
     <ClInclude Include="include\module_satellite.h" />
@@ -36,6 +37,7 @@
   <ItemGroup>
     <ClCompile Include="src\event_handler.cpp" />
     <ClCompile Include="src\graphics.cpp" />
+    <ClCompile Include="src\magnetic_field_circular.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\module_earth.cpp" />
     <ClCompile Include="src\module_satellite.cpp" />

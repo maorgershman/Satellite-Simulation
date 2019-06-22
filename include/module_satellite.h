@@ -4,7 +4,6 @@
 
 namespace Simulation {
     class Satellite {
-    private:
         static constexpr auto DefaultPeriodSeconds = 30.0l;
     public:
         static long double Radius;
@@ -12,6 +11,8 @@ namespace Simulation {
         static long double X, Y;
         static long double PeriodSeconds;
         static long double AngleDegrees, AngleRadians;
+        static long double RadialDirectionX, RadialDirectionY;
+        static long double TangentDirectionX, TangentDirectionY;
         static Timepoint RotationBeginTimepoint;
 
         static void Initialize(const ID2D1Bitmap* const);

@@ -2,9 +2,13 @@
 #include "../include/resource.h"
 #include "../include/module_earth.h"
 #include "../include/module_satellite.h"
+#include "../include/magnetic_field_circular.h"
 #include <string>
 
 namespace Simulation {
+    long double FieldLinesWidth = 10.0f;
+    long double BaseArrowLength = 150.0l, BaseArrowWidth = 25.0l;
+
     Graphics::Graphics(HWND hWnd) : hResult(S_OK), d2d1() {
         CreateFactory();
         CreateRenderTarget(hWnd);
@@ -13,7 +17,8 @@ namespace Simulation {
         CreateDefaultTextFormat();
         CreateBrush();
         CreateSatelliteTrajectoryLineStrokeStyle();
-        UpdateTextLayouts();
+        CreateArrowStrokeStyle();
+        CreateTextLayouts();
     }
 
     Graphics::~Graphics() {
@@ -25,9 +30,13 @@ namespace Simulation {
         SafeRelease(&d2d1.textFormatDefault);
         SafeRelease(&d2d1.brush);
         SafeRelease(&d2d1.strokeStyleSatelliteTrajectoryLine);
+        SafeRelease(&d2d1.strokeStyleArrow);
         SafeRelease(&d2d1.textLayoutPeriod);
         SafeRelease(&d2d1.textLayoutFrequency);
         SafeRelease(&d2d1.textLayoutAngularSpeed);
+        SafeRelease(&d2d1.textLayoutCircularMagneticField);
+        SafeRelease(&d2d1.textLayoutRadialAxis);
+        SafeRelease(&d2d1.textLayoutTangentAxis);
     }
 
     void Graphics::Draw() {
@@ -35,7 +44,10 @@ namespace Simulation {
         d2d1.renderTarget->Clear(D2D1::ColorF(0, 0, 0)); // Black background
         DrawEarth();
         DrawTrajectory();
+        DrawMagneticFieldsLines();
         DrawSatellite();
+        DrawAxes();
+        DrawMagneticFieldsDirections();
         DrawInfo();
         d2d1.renderTarget->EndDraw();
     }
@@ -108,6 +120,31 @@ namespace Simulation {
         }
     }
 
+    void Graphics::CreateArrowStrokeStyle() {
+        if (Success()) {
+            auto startCap = D2D1_CAP_STYLE_ROUND;
+            auto endCap = D2D1_CAP_STYLE_TRIANGLE;
+            auto dashCap = D2D1_CAP_STYLE_FLAT;
+            auto lineJoin = D2D1_LINE_JOIN_BEVEL;
+            auto miterLimit = 10.0f;
+            auto dashStyle = D2D1_DASH_STYLE_SOLID;
+            auto dashOffset = 0.0f;
+            auto props = D2D1::StrokeStyleProperties(startCap, endCap, dashCap, lineJoin, miterLimit, dashStyle, dashOffset);
+            hResult = d2d1.factory->CreateStrokeStyle(props, NULL, 0, &d2d1.strokeStyleArrow);
+        }
+    }
+
+    void Graphics::CreateTextLayouts() {
+        if (Success()) {
+            UpdateTextLayoutPeriod();
+            UpdateTextLayoutFrequency();
+            UpdateTextLayoutAngularSpeed();
+            CreateTextLayoutCircularMagneticField();
+            CreateTextLayoutRadialAxis();
+            CreateTextLayoutTangentAxis();
+        }
+    }
+
     void Graphics::UpdateTextLayouts() {
         if (Success()) {
             // Cleanup the previous layouts
@@ -139,6 +176,10 @@ namespace Simulation {
         d2d1.renderTarget->DrawEllipse(ellipse, d2d1.brush, SatelliteTrajectoryLineWidth, d2d1.strokeStyleSatelliteTrajectoryLine);
     }
 
+    void Graphics::DrawMagneticFieldsLines() const {
+        DrawMagneticFieldLinesCircular();
+    }
+
     void Graphics::DrawSatellite() const {
         auto x = Satellite::X - Satellite::Radius;
         auto y = Satellite::Y - Satellite::Radius;
@@ -149,6 +190,15 @@ namespace Simulation {
         d2d1.renderTarget->SetTransform(rotation);
         d2d1.renderTarget->DrawBitmap(d2d1.bmpSatellite, rect);
         d2d1.renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
+
+    void Graphics::DrawAxes() const {
+        DrawRadialAxis();
+        DrawTangentAxis();
+    }
+
+    void Graphics::DrawMagneticFieldsDirections() const {
+        DrawMagneticFieldDirectionCircular();
     }
 
     void Graphics::DrawInfo() const {
@@ -254,6 +304,111 @@ namespace Simulation {
         return std::pair(nullptr, 0);
     }
 
+    void Graphics::DrawMagneticFieldLinesCircular() const {
+        // Brush color = weak red
+        auto color = D2D1::ColorF(D2D1::ColorF::Red, 0.5f);
+        d2d1.brush->SetColor(color);
+
+        if (Satellite::AngleDegrees == 90.0l || Satellite::AngleDegrees == 270.0l) {
+            // Draw straight line
+            auto p1 = D2D1::Point2F(Earth::X, 0.0f);
+            auto p2 = D2D1::Point2F(Earth::X, (float)Height);
+            d2d1.renderTarget->DrawLine(p1, p2, d2d1.brush, FieldLinesWidth);
+        }
+        else {
+            auto r = abs(MagneticFields::Circular::Radius);
+            auto rE = r / 2.0l;
+            // Left
+            {
+                auto center = D2D1::Point2F(Earth::X - rE, Earth::Y);
+                auto ellipse = D2D1::Ellipse(center, rE, rE);
+                d2d1.renderTarget->DrawEllipse(ellipse, d2d1.brush, FieldLinesWidth);
+            }
+            // Right
+            {
+                auto center = D2D1::Point2F(Earth::X + rE, Earth::Y);
+                auto ellipse = D2D1::Ellipse(center, rE, rE);
+                d2d1.renderTarget->DrawEllipse(ellipse, d2d1.brush, FieldLinesWidth);
+            }
+        }
+    }
+    
+    void Graphics::DrawRadialAxis() const {
+        // Brush color = white
+        auto color = D2D1::ColorF(D2D1::ColorF::White);
+        d2d1.brush->SetColor(color);
+
+        auto dx = Satellite::RadialDirectionX;
+        auto dy = Satellite::RadialDirectionY;
+
+        auto ax = dx * BaseArrowLength;
+        auto ay = dy * BaseArrowLength;
+
+        auto p1 = D2D1::Point2F(Satellite::X, Satellite::Y);
+        auto p2 = D2D1::Point2F(Satellite::X + ax, Satellite::Y - ay);
+        d2d1.renderTarget->DrawLine(p1, p2, d2d1.brush, BaseArrowWidth, d2d1.strokeStyleArrow);
+
+        auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
+        auto len = BaseArrowLength * (size + 50.0l) / size;
+
+        DWRITE_TEXT_METRICS metrics;
+        d2d1.textLayoutRadialAxis->GetMetrics(&metrics);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+
+        d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutRadialAxis, d2d1.brush);
+    }
+
+    void Graphics::DrawTangentAxis() const {
+        // Brush color = white
+        auto color = D2D1::ColorF(D2D1::ColorF::White);
+        d2d1.brush->SetColor(color);
+
+        auto dx = Satellite::TangentDirectionX;
+        auto dy = Satellite::TangentDirectionY;
+
+        auto ax = dx * BaseArrowLength;
+        auto ay = dy * BaseArrowLength;
+
+        auto p1 = D2D1::Point2F(Satellite::X, Satellite::Y);
+        auto p2 = D2D1::Point2F(Satellite::X + ax, Satellite::Y - ay);
+        d2d1.renderTarget->DrawLine(p1, p2, d2d1.brush, BaseArrowWidth, d2d1.strokeStyleArrow);
+
+        auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
+        auto len = BaseArrowLength * (size + 50.0l) / size;
+
+        DWRITE_TEXT_METRICS metrics;
+        d2d1.textLayoutTangentAxis->GetMetrics(&metrics);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+
+        d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutTangentAxis, d2d1.brush);
+    }
+
+    // Optimize this!
+    void Graphics::DrawMagneticFieldDirectionCircular() const {
+        // Brush color = strong red
+        auto color = D2D1::ColorF(D2D1::ColorF::Red);
+        d2d1.brush->SetColor(color);
+
+        auto dx = MagneticFields::Circular::DirectionX;
+        auto dy = MagneticFields::Circular::DirectionY;
+
+        auto ax = dx * BaseArrowLength;
+        auto ay = dy * BaseArrowLength;
+
+        auto p1 = D2D1::Point2F(Satellite::X, Satellite::Y);
+        auto p2 = D2D1::Point2F(Satellite::X + ax, Satellite::Y - ay);
+        d2d1.renderTarget->DrawLine(p1, p2, d2d1.brush, BaseArrowWidth, d2d1.strokeStyleArrow);
+
+        auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
+        auto len = BaseArrowLength * (size + 50.0l) / size;
+        
+        DWRITE_TEXT_METRICS metrics;
+        d2d1.textLayoutCircularMagneticField->GetMetrics(&metrics);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+
+        d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutCircularMagneticField, d2d1.brush);
+    }
+
     void Graphics::CreateTextLayout(std::wstring text, IDWriteTextLayout** pLayout) {
         auto cstr = text.c_str();
         auto len = text.length();
@@ -284,6 +439,24 @@ namespace Simulation {
             auto vel2 = std::to_wstring(360.0l / Satellite::PeriodSeconds);
             auto text = L"ω = " + vel1 + L"π/sec (" + vel2 + L"°/sec)";
             CreateTextLayout(text, &d2d1.textLayoutAngularSpeed);
+        }
+    }
+
+    void Graphics::CreateTextLayoutCircularMagneticField() {
+        if (Success()) {
+            CreateTextLayout(L"B", &d2d1.textLayoutCircularMagneticField);
+        }
+    }
+
+    void Graphics::CreateTextLayoutRadialAxis() {
+        if (Success()) {
+            CreateTextLayout(L"R", &d2d1.textLayoutRadialAxis);
+        }
+    }
+
+    void Graphics::CreateTextLayoutTangentAxis() {
+        if (Success()) {
+            CreateTextLayout(L"T", &d2d1.textLayoutTangentAxis);
         }
     }
 

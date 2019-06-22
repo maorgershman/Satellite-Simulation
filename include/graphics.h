@@ -32,39 +32,57 @@ namespace Simulation {
             IDWriteTextFormat* textFormatDefault;
             ID2D1SolidColorBrush* brush;
             ID2D1StrokeStyle* strokeStyleSatelliteTrajectoryLine;
+            ID2D1StrokeStyle* strokeStyleArrow;
             IDWriteTextLayout* textLayoutPeriod;
             IDWriteTextLayout* textLayoutFrequency;
             IDWriteTextLayout* textLayoutAngularSpeed;
+            IDWriteTextLayout* textLayoutCircularMagneticField;
+            IDWriteTextLayout* textLayoutRadialAxis;
+            IDWriteTextLayout* textLayoutTangentAxis;
         } d2d1;
 
-        template<class T>
-        inline void SafeRelease(T**) const;
-        inline void CreateFactory();
-        inline void CreateRenderTarget(HWND hWnd);
-        inline void LoadModules();
-        inline void CreateDWriteFactory();
-        inline void CreateDefaultTextFormat();
-        inline void CreateBrush();
-        inline void CreateSatelliteTrajectoryLineStrokeStyle();
-        inline void CreateTextLayout(std::wstring, IDWriteTextLayout**);
-        inline void UpdateTextLayoutPeriod();
-        inline void UpdateTextLayoutFrequency();
-        inline void UpdateTextLayoutAngularSpeed();
-        inline void LoadEarthModule(IWICImagingFactory*);
-        inline void LoadSatelliteModule(IWICImagingFactory*);
+        void CreateFactory();
+        void CreateRenderTarget(HWND);
+        void LoadModules(); 
+        void CreateDWriteFactory();
+        void CreateDefaultTextFormat();
+        void CreateBrush();
+        void CreateSatelliteTrajectoryLineStrokeStyle();
+        void CreateArrowStrokeStyle();
+        void CreateTextLayouts();
 
-        void LoadBitmapFromResource(IWICImagingFactory*, int, ID2D1Bitmap**);
-        void DrawEarth() const; 
+        void DrawEarth() const;
         void DrawTrajectory() const;
+        void DrawMagneticFieldsLines() const;
         void DrawSatellite() const;
+        void DrawAxes() const;
+        void DrawMagneticFieldsDirections() const;
         void DrawInfo() const;
+
+        IWICImagingFactory* CreateWICFactory();
+        void LoadEarthModule(IWICImagingFactory*);
+        void LoadSatelliteModule(IWICImagingFactory*);
+        void LoadBitmapFromResource(IWICImagingFactory*, int, ID2D1Bitmap**);
+        const std::pair<void*, DWORD> GetResourcePointerAndSize(int);
+        void DrawMagneticFieldLinesCircular() const;
+        void DrawRadialAxis() const;
+        void DrawTangentAxis() const;
+        void DrawMagneticFieldDirectionCircular() const;
+        void CreateTextLayout(std::wstring, IDWriteTextLayout**);
+        void UpdateTextLayoutPeriod();
+        void UpdateTextLayoutFrequency();
+        void UpdateTextLayoutAngularSpeed();
+        void CreateTextLayoutCircularMagneticField();
+        void CreateTextLayoutRadialAxis();
+        void CreateTextLayoutTangentAxis();
+
         void DrawInfoAngle(float, float) const;
         void DrawInfoPeriod(float, float) const;
         void DrawInfoFrequency(float, float) const;
         void DrawInfoAngularSpeed(float, float) const;
 
-        inline IWICImagingFactory* CreateWICFactory();
-        const std::pair<void*, DWORD> GetResourcePointerAndSize(int);
+        template<class T>
+        void SafeRelease(T**) const;
     public:
         Graphics(HWND);
         ~Graphics();
@@ -78,4 +96,7 @@ namespace Simulation {
         bool Success() const;
         bool Failure() const;
     };
+
+    extern long double FieldLinesWidth;
+    extern long double BaseArrowLength, BaseArrowWidth;
 }
