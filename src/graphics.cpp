@@ -350,10 +350,7 @@ namespace Simulation {
 
         auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
         auto len = BaseArrowLength * (size + 50.0l) / size;
-
-        DWRITE_TEXT_METRICS metrics;
-        d2d1.textLayoutRadialAxis->GetMetrics(&metrics);
-        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - textLayoutTangentAxisOffsetX / 2.0l, Satellite::Y - dy * len - textLayoutTangentAxisOffsetY / 2.0l);
 
         d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutRadialAxis, d2d1.brush);
     }
@@ -375,15 +372,11 @@ namespace Simulation {
 
         auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
         auto len = BaseArrowLength * (size + 50.0l) / size;
-
-        DWRITE_TEXT_METRICS metrics;
-        d2d1.textLayoutTangentAxis->GetMetrics(&metrics);
-        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - textLayoutRadialAxisOffsetX / 2.0l, Satellite::Y - dy * len - textLayoutRadialAxisOffsetY / 2.0l);
 
         d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutTangentAxis, d2d1.brush);
     }
 
-    // Optimize this!
     void Graphics::DrawMagneticFieldDirectionCircular() const {
         // Brush color = strong red
         auto color = D2D1::ColorF(D2D1::ColorF::Red);
@@ -401,10 +394,7 @@ namespace Simulation {
 
         auto size = BaseArrowLength * sqrt(pow(dx, 2.0l) + pow(dy, 2.0l));
         auto len = BaseArrowLength * (size + 50.0l) / size;
-        
-        DWRITE_TEXT_METRICS metrics;
-        d2d1.textLayoutCircularMagneticField->GetMetrics(&metrics);
-        auto p3 = D2D1::Point2F(Satellite::X + dx * len - metrics.widthIncludingTrailingWhitespace / 2.0l, Satellite::Y - dy * len - metrics.height / 2.0l);
+        auto p3 = D2D1::Point2F(Satellite::X + dx * len - textLayoutCircularMagneticFieldOffsetX / 2.0l, Satellite::Y - dy * len - textLayoutCircularMagneticFieldOffsetY / 2.0l);
 
         d2d1.renderTarget->DrawTextLayout(p3, d2d1.textLayoutCircularMagneticField, d2d1.brush);
     }
@@ -445,18 +435,39 @@ namespace Simulation {
     void Graphics::CreateTextLayoutCircularMagneticField() {
         if (Success()) {
             CreateTextLayout(L"B", &d2d1.textLayoutCircularMagneticField);
+
+            DWRITE_TEXT_METRICS metrics;
+            hResult = d2d1.textLayoutCircularMagneticField->GetMetrics(&metrics);
+            if (Success()) {
+                textLayoutCircularMagneticFieldOffsetX = metrics.widthIncludingTrailingWhitespace;
+                textLayoutCircularMagneticFieldOffsetY = metrics.height;
+            }
         }
     }
 
     void Graphics::CreateTextLayoutRadialAxis() {
         if (Success()) {
             CreateTextLayout(L"R", &d2d1.textLayoutRadialAxis);
+
+            DWRITE_TEXT_METRICS metrics;
+            hResult = d2d1.textLayoutRadialAxis->GetMetrics(&metrics);
+            if (Success()) {
+                textLayoutRadialAxisOffsetX = metrics.widthIncludingTrailingWhitespace;
+                textLayoutRadialAxisOffsetY = metrics.height;
+            }
         }
     }
 
     void Graphics::CreateTextLayoutTangentAxis() {
         if (Success()) {
             CreateTextLayout(L"T", &d2d1.textLayoutTangentAxis);
+
+            DWRITE_TEXT_METRICS metrics;
+            hResult = d2d1.textLayoutTangentAxis->GetMetrics(&metrics);
+            if (Success()) {
+                textLayoutTangentAxisOffsetX = metrics.widthIncludingTrailingWhitespace;
+                textLayoutTangentAxisOffsetY = metrics.height;
+            }
         }
     }
 

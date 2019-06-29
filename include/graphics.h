@@ -41,6 +41,13 @@ namespace Simulation {
             IDWriteTextLayout* textLayoutTangentAxis;
         } d2d1;
 
+        float textLayoutCircularMagneticFieldOffsetX;
+        float textLayoutCircularMagneticFieldOffsetY;
+        float textLayoutRadialAxisOffsetX;
+        float textLayoutRadialAxisOffsetY;
+        float textLayoutTangentAxisOffsetX;
+        float textLayoutTangentAxisOffsetY;
+
         void CreateFactory();
         void CreateRenderTarget(HWND);
         void LoadModules(); 
